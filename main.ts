@@ -35,6 +35,12 @@ process.on('SIGTERM', () => shutdown(0));
 process.on('SIGINT', () => shutdown(0));
 
 async function main(): Promise<void> {
+  // The checkout may strip the executable bit (e.g. API-created blobs are
+  // 100644); best effort only — the repo may be mounted read-only.
+  try {
+    const fs = await import('node:fs');
+    fs.chmodSync(forgePath, 0o755);
+  } catch { /* git mode 100755 is the real fix; ignore */ }
   child = spawn(forgePath, [], {
     env: { ...process.env, MAKEFUN_SHOP_TOKEN: shopToken },
     stdio: ['ignore', 'pipe', 'inherit'],
